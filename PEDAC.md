@@ -58,8 +58,8 @@ blocked = [rq1, rq3, rq4]
     - Access 'seen' for ip and add array for ip if `nil`
     - Add current request to `requests`
     - If `requests` is shorter than or equal to `iprepmax`, accept request (next/continue)
-    - Instantiate a variable `ws` `ipreqmax + 1` from end of `requests`
-    - If request at `ws` is younger than 60 seconds, add current request to `blocked`
+    - Instantiate a variable `anchor_request` `ipreqmax + 1` from end of `requests`
+    - If request at `anchor_request` is younger than 60 seconds, add current request to `blocked`
 1. Return `blocked` size
 
 __Time comparison__

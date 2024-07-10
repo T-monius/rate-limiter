@@ -1,20 +1,27 @@
 require 'csv'
+require 'time'
 
 class RateLimiter
   def initialize(max, t)
-    @iprepmax = max
-    @time_frame = t
+    self.iprepmax = max
+    self.time_frame = t
   end
 
   def blocked(path)
-    csv = CSV.read(path, headers: true)
-    seen = { ip: nil, count: 0, blocked: 0 }
-    csv.foreach do |row|
-      seen[:ip] = row['timestamp']
-      if Date.new(seen[:ip]) < Date.new(row['timestamp'])
+    seen = { ip: [] }
+    blocked = []
+    CSV.foreach(path, headers: true) do |row|
+      requests = seen[row['request_ip']] || []
+      requests << row and seen[row['request_ip']] = requests
+      next if requests.size <= iprepmax
+      anchor_request = requests[-(iprepmax + 1)]
+      anchor_time = Time.xmlschema(anchor_request['timestamp'])
+      current_request_time = Time.xmlschema(row['timestamp'])
+      blocked << row unless current_request_time >= (anchor_time + 60)
     end
+    blocked.size
   end
-end
 
-rate_limiter = RateLimiter.new(1, 60)
-rate_limiter.blocked('./requests.csv')
+  protected
+  attr_accessor :iprepmax, :time_frame
+end

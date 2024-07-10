@@ -7,6 +7,6 @@ class TestRateLimiter < Minitest::Test
     rate_limiter = RateLimiter.new(1, 60)
     blocked = rate_limiter.blocked(path)
 
-    assert_equal(3, blocked.size)
+    assert_equal(3, blocked)
   end
 end
