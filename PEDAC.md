@@ -23,18 +23,20 @@ __NOTE__
 ## Examples/Test Cases
 
 ```ruby
-rule = { iprepmax: 2, t: 60 } # Struct?
+rule = { iprepmax: 1, t: 60 } # Struct?
 rate_limiter = RateLimiter(rule)
 rate_limiter.blocked(path)
 #=> 3
-counts = 2
-blocks = 1
+seen = { ip: [rq, rq1, rq2, rq3, rq4, rq5] }
+# corresponds to ^
+requests_for_ip = [rq, rq1, rq2, rq3, rq4, rq5]
+#                      wswe
+#                             c
+blocked = [rq1, rq3, rq4]
 
-seen = { ip: TIMESTAMP }
-
-2024-01-01T00:00:00+00:00,127.0.0.1,example1.onrender.com <--
-2024-01-01T00:00:01+00:00,127.0.0.1,example2.onrender.com 
-2024-01-01T00:01:02+00:00,127.0.0.1,example1.onrender.com <--
+2024-01-01T00:00:00+00:00,127.0.0.1,example1.onrender.com
+2024-01-01T00:00:01+00:00,127.0.0.1,example2.onrender.com <-w
+2024-01-01T00:01:02+00:00,127.0.0.1,example1.onrender.com <-c
 2024-01-01T00:01:03+00:00,127.0.0.1,example2.onrender.com
 2024-01-01T00:01:04+00:00,127.0.0.1,example1.onrender.com
 2024-01-01T00:02:04+00:00,127.0.0.1,example1.onrender.com
@@ -47,9 +49,28 @@ seen = { ip: TIMESTAMP }
 
 ## Algorithm
 
-1. Deine the RateLimiter class to be instantiated w/ a rule
+1. Define the `RateLimiter` class to be instantiated w/ a rule (struct?)
 1. Define blocked
-  - INstantiate a CSV object
-  - Iterate over the rows of the CSV
-    - 
+  - Instantiate a CSV object
+  - Instantiate a hash for ips with an array for requests
+  - Instantiate an array `blocked`
+  - Iterate over the rows of the CSV for current request
+    - Access 'seen' for ip and add array for ip if `nil`
+    - Add current request to `requests`
+    - If `requests` is shorter than or equal to `iprepmax`, accept request (next/continue)
+    - Instantiate a variable `ws` `ipreqmax + 1` from end of `requests`
+    - If request at `ws` is younger than 60 seconds, add current request to `blocked`
+1. Return `blocked` size
 
+__Time comparison__
+
+Determine if a given request (current) is within another (anchor)
+
+1. Instantiate `Time` objects from a UTC strings
+1. Current time >= Anchor time + 60 seconds
+  - Determine how to add 60 seconds to a `Time` object
+    + `t + 60` as `+` adds units of seconds
+```sh
+2024-01-01T00:00:00+00:00,127.0.0.1,example1.onrender.com
+2024-01-01T00:00:01+00:00,127.0.0.1,example2.onrender.com
+```
